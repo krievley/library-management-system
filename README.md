@@ -1,5 +1,16 @@
 # Library Management System
 
+## TODO - Improvements
+>If I had infinite time or this was needed in a real world scenario.
+
+1. Create a separate table for books that a user has checked out. -- Allows for better visibility and will support a user checking out multiple copies of the same book.
+2. CSRF tokens for Passwords 
+3. Replace basic authentication with OAuth, Auth0, or similar. 
+4. Refactor to a single view file to serve as full SPA. 
+5. Extend middleware to all API routes and introduce throttling for requests. 
+6. Use a queue and job system for requests to checkout and return routes to handle large volume of requests. 
+
+
 A Node.js Express application for managing a library, using PostgreSQL for data storage and Redis for caching.
 
 ## Prerequisites
@@ -70,15 +81,15 @@ The application will be available at http://localhost:3000
 
 ### Books
 
-- `GET /books` - Get all books
-- `GET /books/:id` - Get a book by ID
-- `POST /books` - Create a new book
-- `PUT /books/:id` - Update a book
-- `DELETE /books/:id` - Delete a book
-- `GET /books/api/books` - Get paginated books with caching
+- `GET /api/books` - Get paginated books with caching
+- `GET /api/books/:id` - Get a book by ID
+- `POST /api/books` - Create a new book
+- `PUT /api/books/:id` - Update a book
+- `DELETE /api/books/:id` - Delete a book
   - Query parameters:
     - `page` (default: 1) - Page number
     - `limit` (default: 10) - Number of books per page
+    - `search` (default: null) - Search term
   - Response format:
     ```json
     {
@@ -93,6 +104,11 @@ The application will be available at http://localhost:3000
     ```
 
 ## Database Schema
+
+I generally use a framework ORM instead of raw SQL queries, but it ended up taking me a longer time
+than I anticipated to get the database connections and migrations generating correctly from the AI.
+Instead, I chose not to introduce that complexity when it would really only serve for future objectives
+that will not be implemented as this is a test app.
 
 ### Users Table
 
@@ -119,16 +135,32 @@ The application will be available at http://localhost:3000
 | created_at     | TIMESTAMP | Creation timestamp           |
 | updated_at     | TIMESTAMP | Last update timestamp        |
 
+### Transactions Table
+
+| Column        | Type      | Description           |
+|---------------|-----------|-----------------------|
+| user_id       | INTEGER   | References users->id  |
+| book_id       | INTEGER   | References book->id   |
+| checkout_date | TIMESTAMP | Checkout timestamp    |
+| return_date   | TIMESTAMP | Return timestamp      |
+| created_at    | TIMESTAMP | Creation timestamp    |
+| updated_at    | TIMESTAMP | Last update timestamp |
+
 ## Authentication
+> The authentication in this app is not secure. I implemented known basics 
+> such as unique email and hashing passwords, but did not completely 
+> lock down as I would a production environment. This is because there are many 
+> services and libraries that businesses typically use, so I did not spend the 
+> time to write my own.
 
 The application uses JWT (JSON Web Tokens) for authentication:
 
-- Users can register with a username, email, and password
+- Users can register with an email and password
 - Passwords are hashed using bcrypt before being stored in the database
 - Upon successful login or registration, a JWT token is generated and returned to the client
 - The client stores the token in localStorage and includes it in the Authorization header for protected routes
 - Protected routes verify the token using the JWT_SECRET environment variable
-- The token contains the user's ID and username, and expires after 24 hours
+- The token contains the user's ID and expires after 24 hours
 
 ### Protected Routes
 
@@ -262,7 +294,7 @@ npm run test:with-seed
 ```
 
 The tests verify that:
-- The `/books/api/books` endpoint returns a list of books with pagination
+- The `/` endpoint returns a list of books with pagination
 - The endpoint returns the correct number of books per page
 - The endpoint returns the correct page of books
 - Each book has a copies field with a value between 1 and 5

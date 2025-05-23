@@ -8,31 +8,8 @@ const ALL_BOOKS_CACHE_KEY = 'all_books';
 const BOOK_CACHE_PREFIX = 'book_';
 const API_BOOKS_CACHE_PREFIX = 'api_books_';
 
-// GET all books
+// GET all books (paginated)
 router.get('/', async (req, res, next) => {
-  try {
-    // Try to get from cache first
-    const cachedBooks = await getCache(ALL_BOOKS_CACHE_KEY);
-
-    if (cachedBooks) {
-      console.log('Returning books from cache');
-      return res.json(cachedBooks);
-    }
-
-    // If not in cache, get from database
-    const books = await Book.getAll();
-
-    // Store in cache for future requests
-    await setCache(ALL_BOOKS_CACHE_KEY, books);
-
-    res.json(books);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET API books (paginated)
-router.get('/api/books', async (req, res, next) => {
   try {
     // Get pagination parameters from query string
     const page = parseInt(req.query.page) || 1;

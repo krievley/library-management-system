@@ -9,11 +9,11 @@ describe('Books API', () => {
     await pool.end();
     await redisClient.quit();
   });
-  // Test for GET /books/api/books
-  describe('GET /books/api/books', () => {
+  // Test for GET /api/books
+  describe('GET /api/books', () => {
     it('should return a list of books with pagination', async () => {
       const response = await request(app)
-        .get('/books/api/books')
+        .get('/api/books')
         .expect('Content-Type', /json/)
         .expect(200);
 
@@ -32,7 +32,7 @@ describe('Books API', () => {
     it('should return the correct number of books per page', async () => {
       const limit = 5;
       const response = await request(app)
-        .get(`/books/api/books?limit=${limit}`)
+        .get(`/api/books?limit=${limit}`)
         .expect('Content-Type', /json/)
         .expect(200);
 
@@ -44,13 +44,13 @@ describe('Books API', () => {
     it('should return the correct page of books', async () => {
       // Get the first page
       const page1Response = await request(app)
-        .get('/books/api/books?page=1&limit=5')
+        .get('/api/books?page=1&limit=5')
         .expect('Content-Type', /json/)
         .expect(200);
 
       // Get the second page
       const page2Response = await request(app)
-        .get('/books/api/books?page=2&limit=5')
+        .get('/api/books?page=2&limit=5')
         .expect('Content-Type', /json/)
         .expect(200);
 
@@ -62,7 +62,7 @@ describe('Books API', () => {
 
     it('should have copies field for each book with value between 1 and 5', async () => {
       const response = await request(app)
-        .get('/books/api/books')
+        .get('/api/books')
         .expect('Content-Type', /json/)
         .expect(200);
 
@@ -77,7 +77,7 @@ describe('Books API', () => {
     it('should filter books by search term when search parameter is provided', async () => {
       // Get a book from the database to use for search
       const allBooksResponse = await request(app)
-        .get('/books/api/books')
+        .get('/api/books')
         .expect(200);
 
       // Make sure we have books to test with
@@ -88,7 +88,7 @@ describe('Books API', () => {
 
       // Search for books with the search term
       const searchResponse = await request(app)
-        .get(`/books/api/books?search=${encodeURIComponent(searchTerm)}`)
+        .get(`/api/books?search=${encodeURIComponent(searchTerm)}`)
         .expect('Content-Type', /json/)
         .expect(200);
 
@@ -109,7 +109,7 @@ describe('Books API', () => {
       const nonExistentSearchTerm = 'xyznonexistentterm123';
 
       const response = await request(app)
-        .get(`/books/api/books?search=${nonExistentSearchTerm}`)
+        .get(`/api/books?search=${nonExistentSearchTerm}`)
         .expect('Content-Type', /json/)
         .expect(200);
 
@@ -123,7 +123,7 @@ describe('Books API', () => {
 
       // This should not throw an error
       const response = await request(app)
-        .get(`/books/api/books?search=${encodeURIComponent(specialCharSearchTerm)}`)
+        .get(`/api/books?search=${encodeURIComponent(specialCharSearchTerm)}`)
         .expect('Content-Type', /json/)
         .expect(200);
 

@@ -82,7 +82,7 @@ app.get('/books/api/books', async (req, res, next) => {
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/books', booksRouter);
+app.use('/api/books', booksRouter);
 app.use('/transactions', transactionsRouter);
 
 // catch 404 and forward to error handler
