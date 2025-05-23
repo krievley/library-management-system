@@ -1,7 +1,14 @@
 const request = require('supertest');
 const app = require('../app');
+const { pool } = require('../config/database');
+const { redisClient } = require('../config/redis');
 
 describe('Books API', () => {
+  // Close database and Redis connections after all tests
+  afterAll(async () => {
+    await pool.end();
+    await redisClient.quit();
+  });
   // Test for GET /books/api/books
   describe('GET /books/api/books', () => {
     it('should return a list of books with pagination', async () => {

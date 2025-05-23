@@ -3,5 +3,11 @@ html
   head
     title= title
     link(rel='stylesheet', href='/stylesheets/style.css')
+    link(rel='stylesheet', href='/stylesheets/books-app.css')
+    // React and ReactDOM from CDN
+    script(src='https://unpkg.com/react@18/umd/react.development.js', crossorigin)
+    script(src='https://unpkg.com/react-dom@18/umd/react-dom.development.js', crossorigin)
+    // Babel for JSX support
+    script(src='https://unpkg.com/@babel/standalone/babel.min.js')
   body
     block content

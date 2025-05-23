@@ -3,3 +3,9 @@ extends layout
 block content
   h1= title
   p Welcome to #{title}
+
+  // Container for our React app
+  div#books-app
+
+  // React component for the books table
+  script(type="text/babel", src="/javascripts/books-app.js")
