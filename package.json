@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "dev": "nodemon ./bin/www"
+    "dev": "nodemon ./bin/www",
+    "test": "jest",
+    "seed": "node ./db/seed.js",
+    "test:with-seed": "npm run seed && npm test"
   },
   "dependencies": {
     "cookie-parser": "^1.4.6",
@@ -18,6 +21,9 @@
     "pug": "^3.0.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@faker-js/faker": "^8.0.2",
+    "jest": "^29.5.0",
+    "nodemon": "^3.0.1",
+    "supertest": "^6.3.3"
   }
 }
