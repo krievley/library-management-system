@@ -4,6 +4,16 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const { authenticateToken, JWT_SECRET } = require('../middleware/auth');
 
+// Render login page
+router.get('/login', (req, res) => {
+  res.render('login', { title: 'Login' });
+});
+
+// Render registration page
+router.get('/register', (req, res) => {
+  res.render('register', { title: 'Register' });
+});
+
 // Register a new user
 router.post('/register', async (req, res, next) => {
   try {
@@ -96,16 +106,6 @@ router.put('/me', authenticateToken, async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
-
-// Render login page
-router.get('/login', (req, res) => {
-  res.render('login', { title: 'Login' });
-});
-
-// Render registration page
-router.get('/register', (req, res) => {
-  res.render('register', { title: 'Register' });
 });
 
 // Get all users (admin only in a real app)

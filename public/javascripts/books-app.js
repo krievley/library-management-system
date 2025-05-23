@@ -137,6 +137,22 @@ const BooksApp = () => {
 
 // BooksTable component - Displays the books in a table
 const BooksTable = ({ books }) => {
+  // Check if user is logged in
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  React.useEffect(() => {
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    setIsLoggedIn(!!(token && user));
+  }, []);
+
+  // Handle checkout button click
+  const handleCheckout = (bookId) => {
+    // Implement checkout functionality here
+    console.log(`Checking out book with ID: ${bookId}`);
+    // You would typically make an API call to create a transaction
+  };
+
   if (books.length === 0) {
     return <div className="no-books">No books available</div>;
   }
@@ -150,6 +166,7 @@ const BooksTable = ({ books }) => {
           <th>Genre</th>
           <th>Published Year</th>
           <th>Copies Available</th>
+          {isLoggedIn && <th>Actions</th>}
         </tr>
       </thead>
       <tbody>
@@ -160,6 +177,18 @@ const BooksTable = ({ books }) => {
             <td>{book.genre}</td>
             <td>{book.published_year}</td>
             <td>{book.copies}</td>
+            {isLoggedIn && (
+              <td>
+                {book.copies > 0 && (
+                  <button 
+                    className="checkout-button"
+                    onClick={() => handleCheckout(book.id)}
+                  >
+                    Checkout
+                  </button>
+                )}
+              </td>
+            )}
           </tr>
         ))}
       </tbody>

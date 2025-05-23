@@ -170,6 +170,26 @@
   font-style: italic;
 }
 
+/* Checkout Button Styles */
+.checkout-button {
+  padding: 8px 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.checkout-button:hover {
+  background-color: #45a049;
+}
+
+.checkout-button:active {
+  background-color: #3e8e41;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .pagination-controls {
