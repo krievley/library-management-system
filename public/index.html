@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Management System</title>
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <link rel="stylesheet" href="/stylesheets/books-app.css">
+  <link rel="stylesheet" href="/stylesheets/auth.css">
+
+  <!-- React and ReactDOM from CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+  <!-- React Router from CDN -->
+  <script src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.production.min.js" crossorigin></script>
+
+  <!-- Babel for JSX support -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <!-- Root container for our React app -->
+  <div id="root"></div>
+
+  <!-- Load the existing React components first -->
+  <script type="text/babel" src="/javascripts/books-app.js"></script>
+
+  <!-- Load our main app component last -->
+  <script type="text/babel" src="/javascripts/main-app.js"></script>
+</body>
+</html>

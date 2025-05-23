@@ -554,5 +554,5 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
-// Render the app
-ReactDOM.render(<BooksApp />, document.getElementById('books-app'));
+// Export the BooksApp component for use in the main app
+// The component will be rendered by the main app, not directly here

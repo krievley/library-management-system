@@ -80,14 +80,15 @@ app.get('/books/api/books', async (req, res, next) => {
   }
 });
 
-app.use('/', indexRouter);
+// API routes
+app.use('/api', indexRouter);
 app.use('/users', usersRouter);
 app.use('/api/books', booksRouter);
 app.use('/transactions', transactionsRouter);
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+// Serve the SPA for any other routes
+app.get('*', function(req, res) {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // error handler
