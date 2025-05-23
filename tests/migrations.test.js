@@ -84,11 +84,48 @@ describe('Database Migrations', () => {
     expect(result.rows[6].is_nullable).toBe('NO');
   });
 
+  it('should create the transactions table with correct schema', async () => {
+    const result = await pool.query(`
+      SELECT column_name, data_type, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'transactions'
+      ORDER BY ordinal_position;
+    `);
+
+    // Check that the transactions table has the expected columns
+    expect(result.rows).toHaveLength(7);
+
+    // Check id column
+    expect(result.rows[0].column_name).toBe('id');
+    expect(result.rows[0].data_type).toBe('integer');
+    expect(result.rows[0].is_nullable).toBe('NO');
+
+    // Check user_id column
+    expect(result.rows[1].column_name).toBe('user_id');
+    expect(result.rows[1].data_type).toBe('integer');
+    expect(result.rows[1].is_nullable).toBe('NO');
+
+    // Check book_id column
+    expect(result.rows[2].column_name).toBe('book_id');
+    expect(result.rows[2].data_type).toBe('integer');
+    expect(result.rows[2].is_nullable).toBe('NO');
+
+    // Check checkout_date column
+    expect(result.rows[3].column_name).toBe('checkout_date');
+    expect(result.rows[3].data_type).toBe('timestamp without time zone');
+    expect(result.rows[3].is_nullable).toBe('NO');
+
+    // Check return_date column
+    expect(result.rows[4].column_name).toBe('return_date');
+    expect(result.rows[4].data_type).toBe('timestamp without time zone');
+    expect(result.rows[4].is_nullable).toBe('YES');
+  });
+
   it('should create indexes on commonly queried fields', async () => {
     const result = await pool.query(`
       SELECT indexname, indexdef
       FROM pg_indexes
-      WHERE tablename IN ('users', 'books')
+      WHERE tablename IN ('users', 'books', 'transactions')
       ORDER BY tablename, indexname;
     `);
 
@@ -102,13 +139,17 @@ describe('Database Migrations', () => {
     expect(indexNames).toContain('books_author_index');
     expect(indexNames).toContain('books_genre_index');
     expect(indexNames).toContain('books_title_index');
+
+    // Check transactions indexes
+    expect(indexNames).toContain('transactions_checkout_date_index');
+    expect(indexNames).toContain('transactions_return_date_index');
   });
 
   it('should create triggers for updating the updated_at timestamp', async () => {
     const result = await pool.query(`
       SELECT trigger_name, event_manipulation, action_statement
       FROM information_schema.triggers
-      WHERE event_object_table IN ('users', 'books')
+      WHERE event_object_table IN ('users', 'books', 'transactions')
       ORDER BY event_object_table;
     `);
 
@@ -117,5 +158,6 @@ describe('Database Migrations', () => {
 
     expect(triggerNames).toContain('update_books_modtime');
     expect(triggerNames).toContain('update_users_modtime');
+    expect(triggerNames).toContain('update_transactions_modtime');
   });
 });
