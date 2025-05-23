@@ -107,7 +107,7 @@ class Transaction {
 
   // Create a new transaction (checkout a book)
   static async create(transaction) {
-    const { user_id, book_id, due_date } = transaction;
+    const { user_id, book_id } = transaction;
     try {
       // Start a transaction to ensure atomicity
       await db.query('BEGIN');
@@ -115,12 +115,12 @@ class Transaction {
       // Check if the book has available copies
       const bookResult = await db.query('SELECT copies FROM books WHERE id = $1 FOR UPDATE', [book_id]);
       const book = bookResult.rows[0];
-      
+
       if (!book) {
         await db.query('ROLLBACK');
         throw new Error(`Book with ID ${book_id} not found`);
       }
-      
+
       if (book.copies <= 0) {
         await db.query('ROLLBACK');
         throw new Error(`No copies available for book with ID ${book_id}`);
@@ -131,8 +131,8 @@ class Transaction {
 
       // Create the transaction
       const result = await db.query(
-        'INSERT INTO transactions (user_id, book_id, due_date) VALUES ($1, $2, $3) RETURNING *',
-        [user_id, book_id, due_date]
+        'INSERT INTO transactions (user_id, book_id) VALUES ($1, $2) RETURNING *',
+        [user_id, book_id]
       );
 
       // Commit the transaction
@@ -156,12 +156,12 @@ class Transaction {
       // Get the transaction
       const transactionResult = await db.query('SELECT * FROM transactions WHERE id = $1 FOR UPDATE', [id]);
       const transaction = transactionResult.rows[0];
-      
+
       if (!transaction) {
         await db.query('ROLLBACK');
         throw new Error(`Transaction with ID ${id} not found`);
       }
-      
+
       if (transaction.return_date) {
         await db.query('ROLLBACK');
         throw new Error(`Book already returned for transaction with ID ${id}`);

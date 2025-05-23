@@ -63,6 +63,55 @@ const BooksApp = () => {
     fetchBooks(1, pagination.limit, searchTerm);
   };
 
+  // Handle book checkout
+  const handleBookCheckout = async (bookId) => {
+    try {
+      // Get user from localStorage
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+      if (!user.id) {
+        console.error('User ID not found');
+        return { success: false, error: 'User ID not found' };
+      }
+
+      // Make API call to create a transaction
+      const response = await fetch('/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          book_id: bookId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to checkout book');
+      }
+
+      const data = await response.json();
+      console.log('Checkout successful:', data);
+
+      // Update the book in the list to reflect the new availability
+      setBooks(books.map(book => {
+        if (book.id === bookId) {
+          return {
+            ...book,
+            available_copies: book.available_copies - 1
+          };
+        }
+        return book;
+      }));
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error checking out book:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   return (
     <div className="books-container">
       <h2>Library Books</h2>
@@ -107,7 +156,7 @@ const BooksApp = () => {
           )}
 
           {/* Books table */}
-          <BooksTable books={books} />
+          <BooksTable books={books} onCheckout={handleBookCheckout} />
 
           {/* Pagination controls */}
           <div className="pagination-controls">
@@ -136,7 +185,7 @@ const BooksApp = () => {
 };
 
 // BooksTable component - Displays the books in a table
-const BooksTable = ({ books }) => {
+const BooksTable = ({ books, onCheckout }) => {
   // Check if user is logged in
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
@@ -146,11 +195,46 @@ const BooksTable = ({ books }) => {
     setIsLoggedIn(!!(token && user));
   }, []);
 
+  // State for tracking checkout status
+  const [checkoutStatus, setCheckoutStatus] = React.useState({
+    loading: false,
+    error: null,
+    success: false,
+    bookId: null
+  });
+
   // Handle checkout button click
-  const handleCheckout = (bookId) => {
-    // Implement checkout functionality here
-    console.log(`Checking out book with ID: ${bookId}`);
-    // You would typically make an API call to create a transaction
+  const handleCheckout = async (bookId) => {
+    setCheckoutStatus({
+      loading: true,
+      error: null,
+      success: false,
+      bookId
+    });
+
+    try {
+      // Call the onCheckout function passed from parent
+      const result = await onCheckout(bookId);
+
+      if (result.success) {
+        setCheckoutStatus({
+          loading: false,
+          error: null,
+          success: true,
+          bookId
+        });
+      } else {
+        throw new Error(result.error || 'Failed to checkout book');
+      }
+    } catch (error) {
+      console.error('Error checking out book:', error);
+      setCheckoutStatus({
+        loading: false,
+        error: error.message,
+        success: false,
+        bookId
+      });
+    }
   };
 
   if (books.length === 0) {
@@ -179,13 +263,42 @@ const BooksTable = ({ books }) => {
             <td>{book.available_copies}</td>
             {isLoggedIn && (
               <td>
-                {book.available_copies > 0 && (
-                  <button 
-                    className="checkout-button"
-                    onClick={() => handleCheckout(book.id)}
-                  >
-                    Checkout
-                  </button>
+                {book.available_copies > 0 ? (
+                  checkoutStatus.bookId === book.id ? (
+                    checkoutStatus.loading ? (
+                      <button className="checkout-button loading" disabled>
+                        Processing...
+                      </button>
+                    ) : checkoutStatus.success ? (
+                      <button className="checkout-button success" disabled>
+                        Checked Out ✓
+                      </button>
+                    ) : checkoutStatus.error ? (
+                      <button 
+                        className="checkout-button error"
+                        onClick={() => handleCheckout(book.id)}
+                        title={checkoutStatus.error}
+                      >
+                        Try Again
+                      </button>
+                    ) : (
+                      <button 
+                        className="checkout-button"
+                        onClick={() => handleCheckout(book.id)}
+                      >
+                        Checkout
+                      </button>
+                    )
+                  ) : (
+                    <button 
+                      className="checkout-button"
+                      onClick={() => handleCheckout(book.id)}
+                    >
+                      Checkout
+                    </button>
+                  )
+                ) : (
+                  <span className="no-copies">No Copies Available</span>
                 )}
               </td>
             )}

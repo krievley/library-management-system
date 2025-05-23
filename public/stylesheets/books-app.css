@@ -180,6 +180,7 @@
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.3s;
+  min-width: 100px;
 }
 
 .checkout-button:hover {
@@ -188,6 +189,30 @@
 
 .checkout-button:active {
   background-color: #3e8e41;
+}
+
+/* Checkout button states */
+.checkout-button.loading {
+  background-color: #cccccc;
+  cursor: wait;
+}
+
+.checkout-button.success {
+  background-color: #4CAF50;
+  cursor: default;
+}
+
+.checkout-button.error {
+  background-color: #f44336;
+}
+
+.checkout-button.error:hover {
+  background-color: #d32f2f;
+}
+
+.no-copies {
+  color: #999;
+  font-style: italic;
 }
 
 /* Responsive adjustments */
