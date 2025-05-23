@@ -112,6 +112,43 @@ const BooksApp = () => {
     }
   };
 
+  // Handle book return
+  const handleBookReturn = async (transactionId, bookId) => {
+    try {
+      // Make API call to return the book
+      const response = await fetch(`/transactions/${transactionId}/return`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to return book');
+      }
+
+      const data = await response.json();
+      console.log('Return successful:', data);
+
+      // Update the book in the list to reflect the new availability
+      setBooks(books.map(book => {
+        if (book.id === bookId) {
+          return {
+            ...book,
+            available_copies: book.available_copies + 1
+          };
+        }
+        return book;
+      }));
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error returning book:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   return (
     <div className="books-container">
       <h2>Library Books</h2>
@@ -156,7 +193,11 @@ const BooksApp = () => {
           )}
 
           {/* Books table */}
-          <BooksTable books={books} onCheckout={handleBookCheckout} />
+          <BooksTable 
+            books={books} 
+            onCheckout={handleBookCheckout} 
+            onReturn={handleBookReturn} 
+          />
 
           {/* Pagination controls */}
           <div className="pagination-controls">
@@ -185,15 +226,44 @@ const BooksApp = () => {
 };
 
 // BooksTable component - Displays the books in a table
-const BooksTable = ({ books, onCheckout }) => {
+const BooksTable = ({ books, onCheckout, onReturn }) => {
   // Check if user is logged in
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [user, setUser] = React.useState({});
+  const [userTransactions, setUserTransactions] = React.useState([]);
+  const [loadingTransactions, setLoadingTransactions] = React.useState(false);
 
   React.useEffect(() => {
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    setIsLoggedIn(!!(token && user));
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    const isUserLoggedIn = !!(token && userData);
+    setIsLoggedIn(isUserLoggedIn);
+    setUser(userData);
+
+    // Fetch user's active transactions if logged in
+    if (isUserLoggedIn && userData.id) {
+      fetchUserTransactions(userData.id);
+    }
   }, []);
+
+  // Fetch user's transactions
+  const fetchUserTransactions = async (userId) => {
+    setLoadingTransactions(true);
+    try {
+      const response = await fetch(`/transactions/user/${userId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      // Filter for active transactions (return_date is null)
+      const activeTransactions = data.filter(t => t.return_date === null);
+      setUserTransactions(activeTransactions);
+    } catch (error) {
+      console.error("Error fetching user transactions:", error);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
 
   // State for tracking checkout status
   const [checkoutStatus, setCheckoutStatus] = React.useState({
@@ -223,6 +293,11 @@ const BooksTable = ({ books, onCheckout }) => {
           success: true,
           bookId
         });
+
+        // Refresh user transactions to update the UI
+        if (user.id) {
+          fetchUserTransactions(user.id);
+        }
       } else {
         throw new Error(result.error || 'Failed to checkout book');
       }
@@ -233,6 +308,53 @@ const BooksTable = ({ books, onCheckout }) => {
         error: error.message,
         success: false,
         bookId
+      });
+    }
+  };
+
+  // State for tracking return status
+  const [returnStatus, setReturnStatus] = React.useState({
+    loading: false,
+    error: null,
+    success: false,
+    transactionId: null
+  });
+
+  // Handle return button click
+  const handleReturn = async (transactionId, bookId) => {
+    setReturnStatus({
+      loading: true,
+      error: null,
+      success: false,
+      transactionId
+    });
+
+    try {
+      // Call the onReturn function passed from parent
+      const result = await onReturn(transactionId, bookId);
+
+      if (result.success) {
+        setReturnStatus({
+          loading: false,
+          error: null,
+          success: true,
+          transactionId
+        });
+
+        // Refresh user transactions to update the UI
+        if (user.id) {
+          fetchUserTransactions(user.id);
+        }
+      } else {
+        throw new Error(result.error || 'Failed to return book');
+      }
+    } catch (error) {
+      console.error('Error returning book:', error);
+      setReturnStatus({
+        loading: false,
+        error: error.message,
+        success: false,
+        transactionId
       });
     }
   };
@@ -263,43 +385,82 @@ const BooksTable = ({ books, onCheckout }) => {
             <td>{book.available_copies}</td>
             {isLoggedIn && (
               <td>
-                {book.available_copies > 0 ? (
-                  checkoutStatus.bookId === book.id ? (
-                    checkoutStatus.loading ? (
-                      <button className="checkout-button loading" disabled>
-                        Processing...
-                      </button>
-                    ) : checkoutStatus.success ? (
-                      <button className="checkout-button success" disabled>
-                        Checked Out ✓
-                      </button>
-                    ) : checkoutStatus.error ? (
+                {/* Find if user has an active transaction for this book */}
+                {(() => {
+                  const activeTransaction = userTransactions.find(t => t.book_id === book.id);
+
+                  if (activeTransaction) {
+                    // User has an active transaction for this book, show Return button
+                    if (returnStatus.transactionId === activeTransaction.id) {
+                      if (returnStatus.loading) {
+                        return (
+                          <button className="return-button loading" disabled>
+                            Processing...
+                          </button>
+                        );
+                      } else if (returnStatus.success) {
+                        return (
+                          <button className="return-button success" disabled>
+                            Returned ✓
+                          </button>
+                        );
+                      } else if (returnStatus.error) {
+                        return (
+                          <button 
+                            className="return-button error"
+                            onClick={() => handleReturn(activeTransaction.id, book.id)}
+                            title={returnStatus.error}
+                          >
+                            Try Again
+                          </button>
+                        );
+                      }
+                    }
+
+                    return (
                       <button 
-                        className="checkout-button error"
-                        onClick={() => handleCheckout(book.id)}
-                        title={checkoutStatus.error}
+                        className="return-button"
+                        onClick={() => handleReturn(activeTransaction.id, book.id)}
                       >
-                        Try Again
+                        Return
                       </button>
-                    ) : (
-                      <button 
-                        className="checkout-button"
-                        onClick={() => handleCheckout(book.id)}
-                      >
-                        Checkout
-                      </button>
-                    )
-                  ) : (
-                    <button 
-                      className="checkout-button"
-                      onClick={() => handleCheckout(book.id)}
-                    >
-                      Checkout
-                    </button>
-                  )
-                ) : (
-                  <span className="no-copies">No Copies Available</span>
-                )}
+                    );
+                  } else {
+                    // User doesn't have an active transaction, show Checkout button if copies available
+                    if (book.available_copies > 0) {
+                      if (checkoutStatus.bookId === book.id) {
+                        if (checkoutStatus.loading) {
+                          return (
+                            <button className="checkout-button loading" disabled>
+                              Processing...
+                            </button>
+                          );
+                        } else if (checkoutStatus.error) {
+                          return (
+                            <button 
+                              className="checkout-button error"
+                              onClick={() => handleCheckout(book.id)}
+                              title={checkoutStatus.error}
+                            >
+                              Try Again
+                            </button>
+                          );
+                        }
+                      }
+
+                      return (
+                        <button 
+                          className="checkout-button"
+                          onClick={() => handleCheckout(book.id)}
+                        >
+                          Checkout
+                        </button>
+                      );
+                    } else {
+                      return <span className="no-copies">No Copies Available</span>;
+                    }
+                  }
+                })()}
               </td>
             )}
           </tr>

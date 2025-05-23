@@ -96,11 +96,20 @@ router.post('/', authenticateToken, async (req, res, next) => {
 router.put('/:id/return', authenticateToken, async (req, res, next) => {
   try {
     const id = req.params.id;
-    const transaction = await Transaction.returnBook(id);
 
-    if (!transaction) {
+    // First get the transaction to check if the user is authorized
+    const transactionCheck = await Transaction.getById(id);
+
+    if (!transactionCheck) {
       return res.status(404).json({ message: 'Transaction not found' });
     }
+
+    // Check if the user making the request is the one who checked out the book
+    if (transactionCheck.user_id !== req.user.id) {
+      return res.status(403).json({ message: 'You are not authorized to return this book' });
+    }
+
+    const transaction = await Transaction.returnBook(id);
 
     res.json(transaction);
   } catch (error) {
