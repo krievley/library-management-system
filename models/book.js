@@ -1,10 +1,39 @@
 const db = require('../config/database');
 
 class Book {
+  // Get available copies for a book (total copies minus active transactions)
+  static async getAvailableCopies(bookId) {
+    try {
+      const result = await db.query(`
+        SELECT b.copies - COUNT(t.id) as available_copies
+        FROM books b
+        LEFT JOIN transactions t ON b.id = t.book_id AND t.return_date IS NULL
+        WHERE b.id = $1
+        GROUP BY b.copies
+      `, [bookId]);
+
+      // If no book found or no result, return 0
+      if (!result.rows.length) {
+        return 0;
+      }
+
+      return parseInt(result.rows[0].available_copies);
+    } catch (error) {
+      console.error(`Error calculating available copies for book ID ${bookId}:`, error);
+      throw error;
+    }
+  }
   // Get all books
   static async getAll() {
     try {
-      const result = await db.query('SELECT * FROM books ORDER BY title');
+      const result = await db.query(`
+        SELECT b.*, 
+               b.copies - COALESCE(COUNT(t.id), 0) as available_copies
+        FROM books b
+        LEFT JOIN transactions t ON b.id = t.book_id AND t.return_date IS NULL
+        GROUP BY b.id
+        ORDER BY b.title
+      `);
       return result.rows;
     } catch (error) {
       console.error('Error fetching books:', error);
@@ -20,23 +49,31 @@ class Book {
 
       // Build query parameters
       let whereClause = '';
+      let havingClause = '';
 
       // Add search filter if provided
       if (search) {
-        whereClause = `WHERE title ILIKE '%${search}%' OR author ILIKE '%${search}%' OR genre ILIKE '%${search}%'`;
+        whereClause = `WHERE b.title ILIKE '%${search}%' OR b.author ILIKE '%${search}%' OR b.genre ILIKE '%${search}%'`;
       }
 
       // Get total count with search filter if provided
-      const countQuery = `SELECT COUNT(*) FROM books ${whereClause}`;
+      const countQuery = `SELECT COUNT(*) FROM books b ${whereClause}`;
       const countResult = await db.query(
         countQuery
       );
       const total = parseInt(countResult.rows[0].count);
 
-      // Get paginated books with search filter if provided
-      const result = await db.query(
-        `SELECT * FROM books ${whereClause} ORDER BY title LIMIT ${limit} OFFSET ${offset}`
-      );
+      // Get paginated books with search filter if provided and include available copies
+      const result = await db.query(`
+        SELECT b.*, 
+               b.copies - COALESCE(COUNT(t.id), 0) as available_copies
+        FROM books b
+        LEFT JOIN transactions t ON b.id = t.book_id AND t.return_date IS NULL
+        ${whereClause}
+        GROUP BY b.id
+        ORDER BY b.title
+        LIMIT ${limit} OFFSET ${offset}
+      `);
 
       return {
         books: result.rows,
@@ -56,7 +93,14 @@ class Book {
   // Get a book by ID
   static async getById(id) {
     try {
-      const result = await db.query('SELECT * FROM books WHERE id = $1', [id]);
+      const result = await db.query(`
+        SELECT b.*, 
+               b.copies - COALESCE(COUNT(t.id), 0) as available_copies
+        FROM books b
+        LEFT JOIN transactions t ON b.id = t.book_id AND t.return_date IS NULL
+        WHERE b.id = $1
+        GROUP BY b.id
+      `, [id]);
       return result.rows[0];
     } catch (error) {
       console.error(`Error fetching book with ID ${id}:`, error);

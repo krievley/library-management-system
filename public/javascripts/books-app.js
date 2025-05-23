@@ -176,10 +176,10 @@ const BooksTable = ({ books }) => {
             <td>{book.author}</td>
             <td>{book.genre}</td>
             <td>{book.published_year}</td>
-            <td>{book.copies}</td>
+            <td>{book.available_copies}</td>
             {isLoggedIn && (
               <td>
-                {book.copies > 0 && (
+                {book.available_copies > 0 && (
                   <button 
                     className="checkout-button"
                     onClick={() => handleCheckout(book.id)}
