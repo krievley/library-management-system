@@ -1,3 +1,17 @@
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create index on commonly queried user fields
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
 -- Create books table
 CREATE TABLE IF NOT EXISTS books (
   id SERIAL PRIMARY KEY,
@@ -35,8 +49,13 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Trigger to automatically update the updated_at timestamp
+-- Triggers to automatically update the updated_at timestamp
 CREATE TRIGGER update_books_modtime
 BEFORE UPDATE ON books
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_column();
+
+CREATE TRIGGER update_users_modtime
+BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION update_modified_column();

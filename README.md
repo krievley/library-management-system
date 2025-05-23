@@ -34,12 +34,17 @@ A Node.js Express application for managing a library, using PostgreSQL for data 
 
    # Redis Configuration
    REDIS_URL=redis://localhost:6379
+
+   # JWT Configuration
+   JWT_SECRET=your_jwt_secret
    ```
 
-4. Initialize the PostgreSQL database:
+4. Initialize the PostgreSQL database using migrations:
    ```
-   psql -U your_postgres_user -d library -f db/init.sql
+   npm run migrate:up
    ```
+
+   This will create all necessary tables, indexes, and seed data.
 
 ## Running the Application
 
@@ -51,6 +56,16 @@ npm start
 The application will be available at http://localhost:3000
 
 ## API Endpoints
+
+### Users
+
+- `GET /users/register` - Render registration page
+- `POST /users/register` - Register a new user
+- `GET /users/login` - Render login page
+- `POST /users/login` - Login a user
+- `GET /users/me` - Get current user (protected route)
+- `PUT /users/me` - Update current user (protected route)
+- `GET /users` - Get all users
 
 ### Books
 
@@ -78,6 +93,17 @@ The application will be available at http://localhost:3000
 
 ## Database Schema
 
+### Users Table
+
+| Column         | Type      | Description                  |
+|----------------|-----------|------------------------------|
+| id             | SERIAL    | Primary key                  |
+| username       | VARCHAR   | Username (unique)            |
+| email          | VARCHAR   | Email address (unique)       |
+| password       | VARCHAR   | Hashed password              |
+| created_at     | TIMESTAMP | Creation timestamp           |
+| updated_at     | TIMESTAMP | Last update timestamp        |
+
 ### Books Table
 
 | Column         | Type      | Description                  |
@@ -92,6 +118,30 @@ The application will be available at http://localhost:3000
 | created_at     | TIMESTAMP | Creation timestamp           |
 | updated_at     | TIMESTAMP | Last update timestamp        |
 
+## Authentication
+
+The application uses JWT (JSON Web Tokens) for authentication:
+
+- Users can register with a username, email, and password
+- Passwords are hashed using bcrypt before being stored in the database
+- Upon successful login or registration, a JWT token is generated and returned to the client
+- The client stores the token in localStorage and includes it in the Authorization header for protected routes
+- Protected routes verify the token using the JWT_SECRET environment variable
+- The token contains the user's ID and username, and expires after 24 hours
+
+### Protected Routes
+
+The following routes require authentication:
+
+- `GET /users/me` - Get current user
+- `PUT /users/me` - Update current user
+
+To access these routes, include the JWT token in the Authorization header:
+
+```
+Authorization: Bearer <token>
+```
+
 ## Caching Strategy
 
 The application uses Redis for caching:
@@ -103,11 +153,55 @@ The application uses Redis for caching:
 
 ## Development and Testing
 
+### Database Migrations
+
+This project uses [node-pg-migrate](https://github.com/salsita/node-pg-migrate) for database migrations. Migrations allow you to version control your database schema and make incremental changes to it.
+
+#### Creating a New Migration
+
+To create a new migration:
+
+```
+npm run migrate:create name_of_migration
+```
+
+This will create a new migration file in the `migrations` directory with a timestamp prefix.
+
+#### Running Migrations
+
+Migrations are automatically run when the application starts if the database schema is not up to date. However, you can also run migrations manually:
+
+To run all pending migrations:
+
+```
+npm run migrate:up
+```
+
+To run a specific number of pending migrations:
+
+```
+npm run migrate -- up 1
+```
+
+#### Rolling Back Migrations
+
+To roll back the most recent migration:
+
+```
+npm run migrate:down
+```
+
+To roll back a specific number of migrations:
+
+```
+npm run migrate -- down 1
+```
+
 ### Adding New Features
 
 1. Create or update models in the `models` directory
 2. Create or update routes in the `routes` directory
-3. Update the database schema in `db/init.sql` if needed
+3. Create a new migration for any database schema changes
 4. Update the caching strategy as appropriate
 
 ### Database Seeding
@@ -119,6 +213,16 @@ npm run seed
 ```
 
 This will generate 50 books with random titles, authors, ISBNs, and between 1 and 5 copies each.
+
+#### Running Migrations with Seed Data
+
+If you want to run migrations and then seed the database in one command, you can use:
+
+```
+npm run migrate:with-seed
+```
+
+This will first run all pending migrations and then seed the database with 50 random books. This is useful for setting up a new development environment or resetting the database with fresh data.
 
 ### Testing
 

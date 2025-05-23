@@ -7,18 +7,26 @@
     "dev": "nodemon ./bin/www",
     "test": "jest",
     "seed": "node ./db/seed.js",
-    "test:with-seed": "npm run seed && npm test"
+    "test:with-seed": "npm run seed && npm test",
+    "migrate": "node-pg-migrate",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
+    "migrate:create": "node-pg-migrate create",
+    "migrate:with-seed": "npm run migrate:up && npm run seed"
   },
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "debug": "^4.3.4",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "http-errors": "^2.0.0",
+    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
-    "pg": "^8.11.3",
-    "redis": "^4.6.10",
-    "pug": "^3.0.2"
+    "node-pg-migrate": "^6.2.2",
+    "pg": "^8.16.0",
+    "pug": "^3.0.2",
+    "redis": "^4.6.10"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.0.2",

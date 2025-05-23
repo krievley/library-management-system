@@ -11,6 +11,23 @@ var logger = require('morgan');
 require('./config/database');
 require('./config/redis');
 
+// Check and run database migrations if needed
+const { checkMigrationsNeeded, runMigrations } = require('./db/migrate');
+(async () => {
+  try {
+    const migrationsNeeded = await checkMigrationsNeeded();
+    if (migrationsNeeded) {
+      console.log('Database migrations needed. Running migrations...');
+      await runMigrations();
+    } else {
+      console.log('Database schema is up to date.');
+    }
+  } catch (error) {
+    console.error('Error checking or running migrations:', error);
+    // Continue application startup even if migrations fail
+  }
+})();
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var booksRouter = require('./routes/books');
