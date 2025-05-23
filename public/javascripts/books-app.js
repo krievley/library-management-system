@@ -9,18 +9,22 @@ const BooksApp = () => {
   });
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [currentSearch, setCurrentSearch] = React.useState('');
 
   // Fetch books from the API
-  const fetchBooks = async (page = 1, limit = 10) => {
+  const fetchBooks = async (page = 1, limit = 10, search = '') => {
     setLoading(true);
     try {
-      const response = await fetch(`/books/api/books?page=${page}&limit=${limit}`);
+      const url = `/books/api/books?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`;
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
       setBooks(data.books);
       setPagination(data.pagination);
+      setCurrentSearch(search);
       setError(null);
     } catch (e) {
       console.error("Error fetching books:", e);
@@ -38,31 +42,73 @@ const BooksApp = () => {
   // Handle page change
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.pages) {
-      fetchBooks(newPage, pagination.limit);
+      fetchBooks(newPage, pagination.limit, currentSearch);
     }
   };
 
   // Handle limit change
   const handleLimitChange = (event) => {
     const newLimit = parseInt(event.target.value);
-    fetchBooks(1, newLimit);
+    fetchBooks(1, newLimit, currentSearch);
+  };
+
+  // Handle search input change
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  // Handle search form submission
+  const handleSearch = (event) => {
+    event.preventDefault();
+    fetchBooks(1, pagination.limit, searchTerm);
   };
 
   return (
     <div className="books-container">
       <h2>Library Books</h2>
-      
+
+      {/* Search form */}
+      <form onSubmit={handleSearch} className="search-form">
+        <input
+          type="text"
+          placeholder="Search by title, author, or genre"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="search-input"
+        />
+        <button type="submit" className="search-button">Search</button>
+        {currentSearch && (
+          <button 
+            type="button" 
+            className="clear-search" 
+            onClick={() => {
+              setSearchTerm('');
+              fetchBooks(1, pagination.limit, '');
+            }}
+          >
+            Clear Search
+          </button>
+        )}
+      </form>
+
       {/* Error message */}
       {error && <div className="error-message">{error}</div>}
-      
+
       {/* Loading indicator */}
       {loading ? (
         <div className="loading">Loading books...</div>
       ) : (
         <>
+          {/* Search results info */}
+          {currentSearch && (
+            <div className="search-results-info">
+              Search results for: <strong>{currentSearch}</strong>
+            </div>
+          )}
+
           {/* Books table */}
           <BooksTable books={books} />
-          
+
           {/* Pagination controls */}
           <div className="pagination-controls">
             <div className="page-info">
@@ -127,7 +173,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const getPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 5;
-    
+
     if (totalPages <= maxPagesToShow) {
       // If we have fewer pages than the max, show all pages
       for (let i = 1; i <= totalPages; i++) {
@@ -136,39 +182,39 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     } else {
       // Always include first page
       pages.push(1);
-      
+
       // Calculate start and end of page range around current page
       let start = Math.max(2, currentPage - 1);
       let end = Math.min(totalPages - 1, currentPage + 1);
-      
+
       // Adjust if we're at the beginning or end
       if (currentPage <= 2) {
         end = Math.min(totalPages - 1, 4);
       } else if (currentPage >= totalPages - 1) {
         start = Math.max(2, totalPages - 3);
       }
-      
+
       // Add ellipsis if needed
       if (start > 2) {
         pages.push('...');
       }
-      
+
       // Add page numbers in the middle
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
-      
+
       // Add ellipsis if needed
       if (end < totalPages - 1) {
         pages.push('...');
       }
-      
+
       // Always include last page
       if (totalPages > 1) {
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
@@ -180,7 +226,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       >
         Previous
       </button>
-      
+
       {getPageNumbers().map((page, index) => (
         page === '...' ? (
           <span key={`ellipsis-${index}`} className="ellipsis">...</span>
@@ -194,7 +240,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           </button>
         )
       ))}
-      
+
       <button 
         onClick={() => onPageChange(currentPage + 1)} 
         disabled={currentPage === totalPages}

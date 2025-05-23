@@ -13,19 +13,29 @@ class Book {
   }
 
   // Get paginated books
-  static async getPaginated(page = 1, limit = 10) {
+  static async getPaginated(page = 1, limit = 10, search = null) {
     try {
       // Calculate offset
       const offset = (page - 1) * limit;
 
-      // Get total count
-      const countResult = await db.query('SELECT COUNT(*) FROM books');
+      // Build query parameters
+      let whereClause = '';
+
+      // Add search filter if provided
+      if (search) {
+        whereClause = `WHERE title ILIKE '%${search}%' OR author ILIKE '%${search}%' OR genre ILIKE '%${search}%'`;
+      }
+
+      // Get total count with search filter if provided
+      const countQuery = `SELECT COUNT(*) FROM books ${whereClause}`;
+      const countResult = await db.query(
+        countQuery
+      );
       const total = parseInt(countResult.rows[0].count);
 
-      // Get paginated books
+      // Get paginated books with search filter if provided
       const result = await db.query(
-        'SELECT * FROM books ORDER BY title LIMIT $1 OFFSET $2',
-        [limit, offset]
+        `SELECT * FROM books ${whereClause} ORDER BY title LIMIT ${limit} OFFSET ${offset}`
       );
 
       return {

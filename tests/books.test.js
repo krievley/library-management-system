@@ -73,5 +73,63 @@ describe('Books API', () => {
         expect(book.copies).toBeLessThanOrEqual(5);
       }
     });
+
+    it('should filter books by search term when search parameter is provided', async () => {
+      // Get a book from the database to use for search
+      const allBooksResponse = await request(app)
+        .get('/books/api/books')
+        .expect(200);
+
+      // Make sure we have books to test with
+      expect(allBooksResponse.body.books.length).toBeGreaterThan(0);
+
+      // Get the title of the first book to use as search term
+      const searchTerm = allBooksResponse.body.books[0].title.substring(0, 5);
+
+      // Search for books with the search term
+      const searchResponse = await request(app)
+        .get(`/books/api/books?search=${encodeURIComponent(searchTerm)}`)
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      // Check that we got results
+      expect(searchResponse.body.books.length).toBeGreaterThan(0);
+
+      // Check that all returned books match the search term in title, author, or genre
+      for (const book of searchResponse.body.books) {
+        const matchesTitle = book.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesAuthor = book.author.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesGenre = book.genre && book.genre.toLowerCase().includes(searchTerm.toLowerCase());
+
+        expect(matchesTitle || matchesAuthor || matchesGenre).toBe(true);
+      }
+    });
+
+    it('should return empty books array when search term matches no books', async () => {
+      const nonExistentSearchTerm = 'xyznonexistentterm123';
+
+      const response = await request(app)
+        .get(`/books/api/books?search=${nonExistentSearchTerm}`)
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      // Check that we got an empty array
+      expect(response.body.books.length).toBe(0);
+      expect(response.body.pagination.total).toBe(0);
+    });
+
+    it('should handle special characters in search parameter', async () => {
+      const specialCharSearchTerm = 'special&char%';
+
+      // This should not throw an error
+      const response = await request(app)
+        .get(`/books/api/books?search=${encodeURIComponent(specialCharSearchTerm)}`)
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      // Response should be valid even with special characters
+      expect(response.body).toHaveProperty('books');
+      expect(response.body).toHaveProperty('pagination');
+    });
   });
 });

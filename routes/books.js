@@ -31,6 +31,37 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// GET API books (paginated)
+router.get('/api/books', async (req, res, next) => {
+  try {
+    // Get pagination parameters from query string
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || null;
+
+    // Create a cache key based on pagination parameters and search
+    const cacheKey = `${API_BOOKS_CACHE_PREFIX}page${page}_limit${limit}${search ? `_search${search}` : ''}`;
+
+    // Try to get from cache first
+    const cachedBooks = await getCache(cacheKey);
+
+    if (cachedBooks) {
+      console.log(`Returning paginated books (page ${page}, limit ${limit}) from cache`);
+      return res.json(cachedBooks);
+    }
+
+    // If not in cache, get from database
+    const result = await Book.getPaginated(page, limit, search);
+
+    // Store in cache for future requests
+    await setCache(cacheKey, result);
+
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET a single book by ID
 router.get('/:id', async (req, res, next) => {
   try {
@@ -122,36 +153,6 @@ router.delete('/:id', async (req, res, next) => {
     await deleteCache(apiCachePattern);
 
     res.status(204).end();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// GET API books (paginated)
-router.get('/api/books', async (req, res, next) => {
-  try {
-    // Get pagination parameters from query string
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-
-    // Create a cache key based on pagination parameters
-    const cacheKey = `${API_BOOKS_CACHE_PREFIX}page${page}_limit${limit}`;
-
-    // Try to get from cache first
-    const cachedBooks = await getCache(cacheKey);
-
-    if (cachedBooks) {
-      console.log(`Returning paginated books (page ${page}, limit ${limit}) from cache`);
-      return res.json(cachedBooks);
-    }
-
-    // If not in cache, get from database
-    const result = await Book.getPaginated(page, limit);
-
-    // Store in cache for future requests
-    await setCache(cacheKey, result);
-
-    res.json(result);
   } catch (error) {
     next(error);
   }
