@@ -80,7 +80,8 @@ app.get('/books/api/books', async (req, res, next) => {
   }
 });
 
-app.use('/', indexRouter);
+//app.use('/', express.static('public'));
+// app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/api/books', booksRouter);
 app.use('/transactions', transactionsRouter);

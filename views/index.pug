@@ -1,24 +1,24 @@
 extends layout
 
 block content
-  div.user-section
-    div#user-info(style="display: none;")
-      p Welcome, <span id="email"></span>!
-      button#logout-btn Logout
-
-    div#auth-links
-      a(href="/users/login") Login
-      span  | 
-      a(href="/users/register") Register
+  //div.user-section
+  //  div#user-info(style="display: none;")
+  //    p Welcome, <span id="email"></span>!
+  //    button#logout-btn Logout
+  //
+  //  div#auth-links
+  //    a(href="/users/login") Login
+  //    span  |
+  //    a(href="/users/register") Register
 
   h1= title
   p Welcome to #{title}
 
   // Container for our React app
-  div#books-app
+  div#root
 
   // React component for the books table
-  script(type="text/babel", src="/javascripts/books-app.js")
+  script(type="module", src="/javascripts/main.js")
 
   // Authentication script
-  script(src="/javascripts/auth.js")
+  //script(src="/javascripts/auth.js")
