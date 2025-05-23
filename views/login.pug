@@ -1,0 +1,25 @@
+extends layout
+
+block content
+  h1 Login
+
+  div.form-container
+    form#login-form
+      div.form-group
+        label(for="email") Email
+        input#email(type="email" name="email" required)
+
+      div.form-group
+        label(for="password") Password
+        input#password(type="password" name="password" required)
+
+      div.form-group
+        button(type="submit") Login
+
+      div.form-links
+        p Don't have an account? 
+          a(href="/users/register") Register here
+
+    div#error-message.error-message(style="display: none;")
+
+  script(src="/javascripts/login.js")

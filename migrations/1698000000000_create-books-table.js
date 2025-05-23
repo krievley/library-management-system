@@ -1,10 +1,9 @@
 const { PgLiteral } = require('node-pg-migrate');
 
 exports.up = pgm => {
-  // Create update_modified_column function
-  // Note: This function might already exist if the users migration has run
+  // Create update_modified_books function
   pgm.createFunction(
-    'update_modified_column',
+    'update_modified_books',
     [],
     { returns: 'trigger', language: 'plpgsql', ifNotExists: true },
     `
@@ -51,7 +50,7 @@ exports.up = pgm => {
     when: 'BEFORE',
     operation: 'UPDATE',
     level: 'ROW',
-    function: 'update_modified_column'
+    function: 'update_modified_books'
   });
 
   // Insert sample books data
@@ -74,6 +73,6 @@ exports.down = pgm => {
   // Drop table
   pgm.dropTable('books');
 
-  // Note: We don't drop the function here as it might be used by other tables
-  // The function will be dropped in the users migration's down method if needed
+  // Drop function
+  pgm.dropFunction('update_modified_books', []);
 };

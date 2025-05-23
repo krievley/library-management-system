@@ -1,9 +1,9 @@
 const { PgLiteral } = require('node-pg-migrate');
 
 exports.up = pgm => {
-  // Create update_modified_column function
+  // Create update_modified_user function
   pgm.createFunction(
-    'update_modified_column',
+    'update_modified_user',
     [],
     { returns: 'trigger', language: 'plpgsql' },
     `
@@ -31,7 +31,7 @@ exports.up = pgm => {
     }
   });
 
-  // Create indexes on users table
+  // Create index on users table
   pgm.createIndex('users', 'email');
 
   // Create trigger for updated_at
@@ -39,7 +39,7 @@ exports.up = pgm => {
     when: 'BEFORE',
     operation: 'UPDATE',
     level: 'ROW',
-    function: 'update_modified_column'
+    function: 'update_modified_user'
   });
 };
 
@@ -51,5 +51,5 @@ exports.down = pgm => {
   pgm.dropTable('users');
 
   // Drop function
-  pgm.dropFunction('update_modified_column', []);
+  pgm.dropFunction('update_modified_user', []);
 };

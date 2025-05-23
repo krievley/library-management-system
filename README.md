@@ -31,6 +31,7 @@ A Node.js Express application for managing a library, using PostgreSQL for data 
    POSTGRES_HOST=localhost
    POSTGRES_PORT=5432
    POSTGRES_DB=library
+   DATABASE_URL=postgresql://your_postgres_user:your_postgres_password@localhost:5432/library
 
    # Redis Configuration
    REDIS_URL=redis://localhost:6379
@@ -155,7 +156,7 @@ The application uses Redis for caching:
 
 ### Database Migrations
 
-This project uses [node-pg-migrate](https://github.com/salsita/node-pg-migrate) for database migrations. Migrations allow you to version control your database schema and make incremental changes to it.
+This project uses [node-pg-migrate](https://github.com/salsita/node-pg-migrate) for database migrations. Migrations allow you to version control your database schema and make incremental changes to it. The `DATABASE_URL` environment variable is required for node-pg-migrate to connect to the PostgreSQL database.
 
 #### Creating a New Migration
 
@@ -224,6 +225,28 @@ npm run migrate:with-seed
 
 This will first run all pending migrations and then seed the database with 50 random books. This is useful for setting up a new development environment or resetting the database with fresh data.
 
+### Database Management
+
+#### Erasing Database Data
+
+If you need to clear all data from the database while preserving the table structures and migration history, you can use:
+
+```
+npm run db:erase
+```
+
+This will truncate all application tables (users, books, etc.) but preserve the pgmigrations table to maintain migration history. This is useful during development when you want to start with a clean database without having to drop and recreate tables.
+
+#### Resetting the Database
+
+To completely reset the database (erase all data and then run migrations and seed data), you can use:
+
+```
+npm run db:reset
+```
+
+This command combines `db:erase`, `migrate:up`, and `seed` in one step. It's useful when you want to quickly reset your database to a clean state with sample data.
+
 ### Testing
 
 The application uses Jest for testing. To run the tests:
@@ -250,6 +273,11 @@ For development, you can use the default values in the configuration files:
 
 - PostgreSQL: `config/database.js`
 - Redis: `config/redis.js`
+
+The `DATABASE_URL` environment variable is required for database migrations using node-pg-migrate. It should be in the format:
+```
+postgresql://username:password@host:port/database
+```
 
 For production, set the environment variables in your deployment environment.
 

@@ -26,7 +26,7 @@ describe('migrate:with-seed script', () => {
     expect(packageJson.scripts).toHaveProperty('seed');
     
     // Check if node-pg-migrate is installed
-    expect(packageJson.dependencies).toHaveProperty('node-pg-migrate');
+    expect(packageJson.devDependencies).toHaveProperty('node-pg-migrate');
     
     // Check if the seed.js file exists
     expect(fs.existsSync(path.resolve(__dirname, '../db/seed.js'))).toBe(true);
