@@ -40,51 +40,24 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
+// explicitly set MIME type for JavaScript files
+app.use((req, res, next) => {
+  if (req.url.endsWith('.js')) {
+    res.type('application/javascript');
+  }
+  next();
+});
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Direct route for books API to avoid router mounting issues
-const Book = require('./models/book');
-const { setCache, getCache } = require('./config/redis');
-const API_BOOKS_CACHE_PREFIX = 'api_books_';
-
-app.get('/books/api/books', async (req, res, next) => {
-  try {
-    // Get pagination parameters from query string
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const search = req.query.search || null;
-
-    // Create a cache key based on pagination parameters and search
-    const cacheKey = `${API_BOOKS_CACHE_PREFIX}page${page}_limit${limit}${search ? `_search${search}` : ''}`;
-
-    // Try to get from cache first
-    const cachedBooks = await getCache(cacheKey);
-
-    if (cachedBooks) {
-      console.log(`Returning paginated books (page ${page}, limit ${limit}) from cache`);
-      return res.json(cachedBooks);
-    }
-
-    // If not in cache, get from database
-    const result = await Book.getPaginated(page, limit, search);
-
-    // Store in cache for future requests
-    await setCache(cacheKey, result);
-
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
-
 app.use('/', indexRouter);
 app.use('/api', apiRouter);
 app.use('/users', usersRouter);
-// app.use('/api/books', booksRouter);
+app.use('/books', booksRouter);
 app.use('/transactions', transactionsRouter);
 
 // catch 404 and forward to error handler
