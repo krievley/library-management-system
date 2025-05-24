@@ -76,10 +76,10 @@ describe('Transactions API', () => {
   });
 
   // Test checkout validation
-  describe('POST /transactions', () => {
+  describe('POST /api/checkout', () => {
     it('should return 401 when trying to checkout without authentication', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/api/checkout')
         .send({
           user_id: userId,
           book_id: bookId
@@ -92,7 +92,7 @@ describe('Transactions API', () => {
 
     it('should return 400 when trying to checkout a book with no available copies', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/api/checkout')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           user_id: userId,
@@ -107,7 +107,7 @@ describe('Transactions API', () => {
 
     it('should return 400 when trying to checkout without user_id', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/api/checkout')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           book_id: bookId
@@ -121,7 +121,7 @@ describe('Transactions API', () => {
 
     it('should return 400 when trying to checkout without book_id', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/api/checkout')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           user_id: userId
@@ -135,7 +135,7 @@ describe('Transactions API', () => {
 
     it('should successfully checkout a book with available copies', async () => {
       const response = await request(app)
-        .post('/transactions')
+        .post('/api/checkout')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           user_id: userId,
@@ -151,7 +151,7 @@ describe('Transactions API', () => {
 
       // After successful checkout, the book should have no available copies
       const secondCheckoutResponse = await request(app)
-        .post('/transactions')
+        .post('/api/checkout')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           user_id: userId,
@@ -166,7 +166,7 @@ describe('Transactions API', () => {
   });
 
   // Test return validation
-  describe('PUT /transactions/:id/return', () => {
+  describe('POST /api/return', () => {
     let transactionId;
     let secondUserId;
     let secondUserAuthToken;
@@ -205,7 +205,7 @@ describe('Transactions API', () => {
 
       // Checkout the book with the first user
       const checkoutResponse = await request(app)
-        .post('/transactions')
+        .post('/api/checkout')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           user_id: userId,
@@ -222,7 +222,10 @@ describe('Transactions API', () => {
 
     it('should return 401 when trying to return a book without authentication', async () => {
       const response = await request(app)
-        .put(`/transactions/${transactionId}/return`)
+        .post(`/api/return`)
+          .send({
+            id: transactionId
+          })
         .expect('Content-Type', /json/)
         .expect(401);
 
@@ -232,7 +235,10 @@ describe('Transactions API', () => {
     it('should return 404 when trying to return a non-existent transaction', async () => {
       const nonExistentId = 99999;
       const response = await request(app)
-        .put(`/transactions/${nonExistentId}/return`)
+          .post(`/api/return`)
+          .send({
+            id: nonExistentId
+          })
         .set('Authorization', `Bearer ${authToken}`)
         .expect('Content-Type', /json/)
         .expect(404);
@@ -244,7 +250,10 @@ describe('Transactions API', () => {
     it('should return 403 when a different user tries to return a book they did not check out', async () => {
       // Try to return the book with the second user's token
       const response = await request(app)
-        .put(`/transactions/${transactionId}/return`)
+          .post(`/api/return`)
+          .send({
+            id: transactionId
+          })
         .set('Authorization', `Bearer ${secondUserAuthToken}`)
         .expect('Content-Type', /json/)
         .expect(403);
@@ -255,7 +264,10 @@ describe('Transactions API', () => {
 
     it('should successfully return a book that the user has checked out', async () => {
       const response = await request(app)
-        .put(`/transactions/${transactionId}/return`)
+          .post(`/api/return`)
+          .send({
+            id: transactionId
+          })
         .set('Authorization', `Bearer ${authToken}`)
         .expect('Content-Type', /json/)
         .expect(200);
@@ -266,7 +278,10 @@ describe('Transactions API', () => {
 
     it('should return 400 when trying to return a book that has already been returned', async () => {
       const response = await request(app)
-        .put(`/transactions/${transactionId}/return`)
+          .post(`/api/return`)
+          .send({
+            id: transactionId
+          })
         .set('Authorization', `Bearer ${authToken}`)
         .expect('Content-Type', /json/)
         .expect(400);

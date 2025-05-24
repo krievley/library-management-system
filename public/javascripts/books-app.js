@@ -16,7 +16,7 @@ const BooksApp = () => {
   const fetchBooks = async (page = 1, limit = 10, search = '') => {
     setLoading(true);
     try {
-      const url = `/books/api/books?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`;
+      const url = `/api/books?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -75,7 +75,7 @@ const BooksApp = () => {
       }
 
       // Make API call to create a transaction
-      const response = await fetch('/transactions', {
+      const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,8 +116,11 @@ const BooksApp = () => {
   const handleBookReturn = async (transactionId, bookId) => {
     try {
       // Make API call to return the book
-      const response = await fetch(`/transactions/${transactionId}/return`, {
-        method: 'PUT',
+      const response = await fetch(`/api/return`, {
+        method: 'POST',
+        body: JSON.stringify({
+          id: transactionId
+        }),
         headers: {
           'Content-Type': 'application/json',
         }
