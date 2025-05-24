@@ -8,16 +8,16 @@
   border-radius: 4px;
 }
 
-#user-info {
+.user-info {
   display: flex;
   align-items: center;
 }
 
-#user-info p {
+.user-info p {
   margin: 0 10px 0 0;
 }
 
-#logout-btn {
+.logout-btn {
   background-color: #f44336;
   color: white;
   border: none;
@@ -26,17 +26,20 @@
   cursor: pointer;
 }
 
-#logout-btn:hover {
+.logout-btn:hover {
   background-color: #d32f2f;
 }
 
-#auth-links a {
+.auth-links button {
   color: #4a90e2;
   text-decoration: none;
   margin: 0 5px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
 }
 
-#auth-links a:hover {
+.auth-links button:hover {
   text-decoration: underline;
 }
 

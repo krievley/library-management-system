@@ -1,16 +1,38 @@
 const App = () => {
     const [window, setWindow] = React.useState('book');
+    // Check if user is logged in
+    const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+    const [user, setUser] = React.useState({});
+
+    const logout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setIsLoggedIn(false);
+        setUser({});
+    }
+
+    React.useEffect(() => {
+        const token = localStorage.getItem('token');
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        const isUserLoggedIn = !!(token && userData);
+        setIsLoggedIn(isUserLoggedIn);
+        setUser(userData);
+    }, []);
 
     return (
         <>
-            <nav>
-                <ul>
-                    <li onClick={() => setWindow('book')}>Books</li>
-                    <li onClick={() => setWindow('login')}>Login</li>
-                    <li onClick={() => setWindow('register')}>Register</li>
-                </ul>
-            </nav>
-            {window == 'book' ? <BooksApp /> : null}
+            <div className="auth-links">
+                <button onClick={() => setWindow('book')}>Books</button>
+                {!isLoggedIn ? (
+                        <>
+                            <button onClick={() => setWindow('login')}>Login</button>
+                            <button onClick={() => setWindow('register')}>Register</button>
+                        </>
+                    ) : (
+                        <button onClick={logout}>Logout</button>
+                    )}
+            </div>
+            {window == 'book' ? <BooksApp user={user} isLoggedIn={isLoggedIn} /> : null}
             {window == 'login' ? <LoginApp /> : null}
             {window == 'register' ? <RegisterApp /> : null}
         </>
@@ -18,7 +40,7 @@ const App = () => {
 }
 
 // BooksApp component - Main component that fetches and displays books
-const BooksApp = () => {
+const BooksApp = ({user, isLoggedIn}) => {
     const [books, setBooks] = React.useState([]);
     const [pagination, setPagination] = React.useState({
         total: 0,
@@ -98,6 +120,7 @@ const BooksApp = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
                     user_id: user.id,
@@ -142,6 +165,7 @@ const BooksApp = () => {
                 }),
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
 
@@ -216,6 +240,8 @@ const BooksApp = () => {
 
                     {/* Books table */}
                     <BooksTable
+                        user={user}
+                        isLoggedIn={isLoggedIn}
                         books={books}
                         onCheckout={handleBookCheckout}
                         onReturn={handleBookReturn}
@@ -248,23 +274,15 @@ const BooksApp = () => {
 };
 
 // BooksTable component - Displays the books in a table
-const BooksTable = ({ books, onCheckout, onReturn }) => {
+const BooksTable = ({user, isLoggedIn, books, onCheckout, onReturn }) => {
     // Check if user is logged in
-    const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-    const [user, setUser] = React.useState({});
     const [userTransactions, setUserTransactions] = React.useState([]);
     const [loadingTransactions, setLoadingTransactions] = React.useState(false);
 
     React.useEffect(() => {
-        const token = localStorage.getItem('token');
-        const userData = JSON.parse(localStorage.getItem('user') || '{}');
-        const isUserLoggedIn = !!(token && userData);
-        setIsLoggedIn(isUserLoggedIn);
-        setUser(userData);
-
         // Fetch user's active transactions if logged in
-        if (isUserLoggedIn && userData.id) {
-            fetchUserTransactions(userData.id);
+        if (isLoggedIn && user.id) {
+            fetchUserTransactions(user.id);
         }
     }, []);
 
@@ -272,7 +290,12 @@ const BooksTable = ({ books, onCheckout, onReturn }) => {
     const fetchUserTransactions = async (userId) => {
         setLoadingTransactions(true);
         try {
-            const response = await fetch(`/transactions/user/${userId}`);
+            const response = await fetch(`/transactions/user/${userId}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -608,7 +631,8 @@ const LoginApp = () => {
             const response = await fetch('/users/login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
                     email: formData.email,
@@ -722,7 +746,8 @@ const RegisterApp = () => {
             const response = await fetch('/users/register', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
                     email: formData.email,
